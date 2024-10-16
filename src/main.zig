@@ -7,7 +7,18 @@ const integrate = @import("orbit.zig").integrate;
 const dprint = @import("utils.zig").dprint;
 
 pub fn main() anyerror!void {
-    // Initialization
+    // Program Initialization
+    //--------------------------------------------------------------------------------------
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    const allocator = gpa.allocator();
+    defer _ = gpa.deinit();
+
+    // test stuff, printing arguments
+    const parsed_args = try parseArgs(allocator);
+
+    std.debug.print("parsed args: {}\n", parsed_args);
+
+    // Raylib Initialization
     //--------------------------------------------------------------------------------------
     const screenWidth = 800;
     const screenHeight = 450;
@@ -16,6 +27,7 @@ pub fn main() anyerror!void {
     defer rl.closeWindow(); // Close window and OpenGL context
 
     // rl.setTargetFPS(60); // Set our game to run at 60 frames-per-second
+
     //--------------------------------------------------------------------------------------
 
     var camera = rl.Camera3D{
@@ -37,7 +49,7 @@ pub fn main() anyerror!void {
     moon.prt();
     earth.prt();
 
-    const num_sat = 20;
+    const num_sat = 10;
     var entities: [num_sat + 2]OrbitalEntity = undefined;
     entities[0] = earth;
     entities[1] = moon;
@@ -46,23 +58,14 @@ pub fn main() anyerror!void {
     const mvec = Vec3.init(1e3, 0, 0);
 
     for (entities[2..], 1..) |*ent, index| {
-        std.debug.print("\nDEBUG: ent {}\n", .{index});
-        // const fac: f32 = @as(f32, @floatFromInt(index)) / (@as(f32, @floatFromInt(num_sat)) * 1.2);
-        const fac = rl.math.remap(@as(f32, @floatFromInt(index)), 1.0, @as(f32, @floatFromInt(entities[2..].len)), 0.5, 1.2);
-        std.debug.print("fac: {}i\n", .{fac});
+        const fac = rl.math.remap(to(f32, index), 0, to(f32, entities[2..].len), 0.5, 1.2);
+        std.debug.print("thing {}\n", .{fac});
         const r = mpos.rlVec().scale(fac).rotateByAxisAngle(rl.Vector3.init(1.0, 0, 0), fac);
-        std.debug.print("pos: {}, {}, {}\n", r);
         ent.* = OrbitalEntity.init("s", Vec3.init(r.x, r.y, r.z), mvec, 1e9);
     }
 
     const secondsToRun: i32 = 1 * 60 * 60;
     //  endTime: i64 = 2628000; // one month in seconds
-
-    integrate(&entities, secondsToRun);
-
-    for (entities) |ent| {
-        ent.prt();
-    }
 
     // Main game loop
     while (!rl.windowShouldClose()) { // Detect window close button or ESC key
@@ -123,4 +126,16 @@ fn map(input: rl.Vector3) rl.Vector3 {
 // int to float conversion util
 fn to(T: type, n: anytype) T {
     return @as(T, @floatFromInt(n));
+}
+
+const Args = struct {
+    num_satellites: i32,
+};
+
+fn parseArgs(allocator: std.mem.Allocator) !Args {
+    // pars args into string array, uses allocator for windows compatibility
+    const args = try std.process.argsAlloc(allocator);
+    defer std.process.argsFree(allocator, args);
+
+    return Args{ .num_satellites = std.fmt.parseInt(i32, args[1], 10) catch 20 };
 }
