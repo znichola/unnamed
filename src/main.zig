@@ -15,7 +15,7 @@ pub fn main() anyerror!void {
     rl.initWindow(screenWidth, screenHeight, "raylib-zig [core] example - basic window");
     defer rl.closeWindow(); // Close window and OpenGL context
 
-    rl.setTargetFPS(60); // Set our game to run at 60 frames-per-second
+    // rl.setTargetFPS(60); // Set our game to run at 60 frames-per-second
     //--------------------------------------------------------------------------------------
 
     var camera = rl.Camera3D{
@@ -33,11 +33,15 @@ pub fn main() anyerror!void {
 
     const earth = OrbitalEntity.init("Earth", Vec3.init(0, 0, 0), Vec3.init(0, 0, 0), 5.972e24);
     const moon = OrbitalEntity.init("Moon", Vec3.init(0, 384.4e6, 0), Vec3.init(1e3, 0, 0), 7.38e22);
-
+    const satelite = OrbitalEntity.init("satelite", Vec3.init(0, 300.4e6, 0), Vec3.init(1e3, 0, 0), 1e3);
+    const s2 = OrbitalEntity.init("satelite", Vec3.init(0, 250.4e6, 0), Vec3.init(1e3, 0, 1e3), 1e3);
+    const s3 = OrbitalEntity.init("satelite", Vec3.init(0, 200.4e6, 0), Vec3.init(1e3, 1e2, 0), 1e3);
+    const s4 = OrbitalEntity.init("satelite", Vec3.init(0, 230.4e6, 0), Vec3.init(1e3, 0, 1e3), 1e3);
+    const s5 = OrbitalEntity.init("satelite", Vec3.init(0, 150.4e6, 0), Vec3.init(1e3, 1e2, 0), 1e3);
     moon.prt();
     earth.prt();
 
-    var entities = [_]OrbitalEntity{ earth, moon };
+    var entities = [_]OrbitalEntity{ earth, moon, satelite, s2, s3, s4, s5 };
     const secondsToRun: i32 = 1 * 60 * 60;
     //  endTime: i64 = 2628000; // one month in seconds
 
@@ -53,7 +57,7 @@ pub fn main() anyerror!void {
         // TODO: Update your variables here
         //----------------------------------------------------------------------------------
 
-        //camera.update(rl.CameraMode.camera_free);
+        camera.update(rl.CameraMode.camera_third_person);
 
         integrate(&entities, secondsToRun);
 
@@ -73,9 +77,13 @@ pub fn main() anyerror!void {
         {
             camera.begin();
             defer camera.end();
-
-            rl.drawSphere(map(entities[0].pos.rlVec()), 2, rl.Color.blue);
-            rl.drawSphere(map(entities[1].pos.rlVec()), 1, rl.Color.red);
+            rl.drawSphere(map(entities[0].pos.rlVec()), 1, rl.Color.blue);
+            rl.drawSphere(map(entities[1].pos.rlVec()), 0.5, rl.Color.red);
+            rl.drawSphere(map(entities[2].pos.rlVec()), 0.5, rl.Color.purple);
+            rl.drawSphere(map(entities[3].pos.rlVec()), 0.5, rl.Color.pink);
+            rl.drawSphere(map(entities[4].pos.rlVec()), 0.5, rl.Color.yellow);
+            rl.drawSphere(map(entities[5].pos.rlVec()), 0.5, rl.Color.green);
+            rl.drawSphere(map(entities[6].pos.rlVec()), 0.5, rl.Color.dark_purple);
             // rl.drawSphere(entities[0].pos.rlVec(), 10, rl.Color.blue);
         }
 
