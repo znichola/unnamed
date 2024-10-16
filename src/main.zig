@@ -33,22 +33,36 @@ pub fn main() anyerror!void {
 
     const earth = OrbitalEntity.init("Earth", Vec3.init(0, 0, 0), Vec3.init(0, 0, 0), 5.972e24);
     const moon = OrbitalEntity.init("Moon", Vec3.init(0, 384.4e6, 0), Vec3.init(1e3, 0, 0), 7.38e22);
-    const satelite = OrbitalEntity.init("satelite", Vec3.init(0, 300.4e6, 0), Vec3.init(1e3, 0, 0), 1e3);
-    const s2 = OrbitalEntity.init("satelite", Vec3.init(0, 250.4e6, 0), Vec3.init(1e3, 0, 1e3), 1e3);
-    const s3 = OrbitalEntity.init("satelite", Vec3.init(0, 200.4e6, 0), Vec3.init(1e3, 1e2, 0), 1e3);
-    const s4 = OrbitalEntity.init("satelite", Vec3.init(0, 230.4e6, 0), Vec3.init(1e3, 0, 1e3), 1e3);
-    const s5 = OrbitalEntity.init("satelite", Vec3.init(0, 150.4e6, 0), Vec3.init(1e3, 1e2, 0), 1e3);
+
     moon.prt();
     earth.prt();
 
-    var entities = [_]OrbitalEntity{ earth, moon, satelite, s2, s3, s4, s5 };
+    const num_sat = 20;
+    var entities: [num_sat + 2]OrbitalEntity = undefined;
+    entities[0] = earth;
+    entities[1] = moon;
+
+    const mpos = Vec3.init(0, 384.4e6, 0);
+    const mvec = Vec3.init(1e3, 0, 0);
+
+    for (entities[2..], 1..) |*ent, index| {
+        std.debug.print("\nDEBUG: ent {}\n", .{index});
+        // const fac: f32 = @as(f32, @floatFromInt(index)) / (@as(f32, @floatFromInt(num_sat)) * 1.2);
+        const fac = rl.math.remap(@as(f32, @floatFromInt(index)), 1.0, @as(f32, @floatFromInt(entities[2..].len)), 0.5, 1.2);
+        std.debug.print("fac: {}i\n", .{fac});
+        const r = mpos.rlVec().scale(fac).rotateByAxisAngle(rl.Vector3.init(1.0, 0, 0), fac);
+        std.debug.print("pos: {}, {}, {}\n", r);
+        ent.* = OrbitalEntity.init("s", Vec3.init(r.x, r.y, r.z), mvec, 1e9);
+    }
+
     const secondsToRun: i32 = 1 * 60 * 60;
     //  endTime: i64 = 2628000; // one month in seconds
 
     integrate(&entities, secondsToRun);
 
-    entities[0].prt();
-    entities[1].prt();
+    for (entities) |ent| {
+        ent.prt();
+    }
 
     // Main game loop
     while (!rl.windowShouldClose()) { // Detect window close button or ESC key
@@ -69,7 +83,7 @@ pub fn main() anyerror!void {
         rl.clearBackground(rl.Color.white);
 
         rl.drawText("Congrats! You created your first window!", 190, 200, 20, rl.Color.light_gray);
-        rl.drawText("moon:", 190, 240, 20, rl.Color.red);
+        rl.drawText("earth: {}", 190, 240, 20, rl.Color.red);
         rl.drawFPS(10, 10);
 
         // text -----------
@@ -77,13 +91,22 @@ pub fn main() anyerror!void {
         {
             camera.begin();
             defer camera.end();
-            rl.drawSphere(map(entities[0].pos.rlVec()), 1, rl.Color.blue);
-            rl.drawSphere(map(entities[1].pos.rlVec()), 0.5, rl.Color.red);
-            rl.drawSphere(map(entities[2].pos.rlVec()), 0.5, rl.Color.purple);
-            rl.drawSphere(map(entities[3].pos.rlVec()), 0.5, rl.Color.pink);
-            rl.drawSphere(map(entities[4].pos.rlVec()), 0.5, rl.Color.yellow);
-            rl.drawSphere(map(entities[5].pos.rlVec()), 0.5, rl.Color.green);
-            rl.drawSphere(map(entities[6].pos.rlVec()), 0.5, rl.Color.dark_purple);
+            for (entities, 0..) |ent, index| {
+                var color: rl.Color = undefined;
+                var radius: f32 = undefined;
+                if (index == 0) {
+                    color = rl.Color.blue;
+                    radius = 2;
+                } else if (index == 1) {
+                    color = rl.Color.gray;
+                    radius = 0.6;
+                } else {
+                    const hue = to(f32, index + 1) / to(f32, entities.len) * 360;
+                    color = rl.Color.fromHSV(hue, 0.5, 0.7);
+                    radius = 0.3;
+                }
+                rl.drawSphere(map(ent.pos.rlVec()), radius, color);
+            }
             // rl.drawSphere(entities[0].pos.rlVec(), 10, rl.Color.blue);
         }
 
@@ -95,4 +118,9 @@ pub fn main() anyerror!void {
 fn map(input: rl.Vector3) rl.Vector3 {
     const dist_unit = 384.4e6;
     return input.scale(10.0 / dist_unit);
+}
+
+// int to float conversion util
+fn to(T: type, n: anytype) T {
+    return @as(T, @floatFromInt(n));
 }
