@@ -13,10 +13,12 @@ pub fn main() anyerror!void {
     const allocator = gpa.allocator();
     defer _ = gpa.deinit();
 
-    // test stuff, printing arguments
     const parsed_args = try parseArgs(allocator);
-
     std.debug.print("parsed args: {}\n", parsed_args);
+
+    // if (try foo()) {
+    //     return;
+    // }
 
     // Raylib Initialization
     //--------------------------------------------------------------------------------------
@@ -49,7 +51,7 @@ pub fn main() anyerror!void {
     moon.prt();
     earth.prt();
 
-    const num_sat = 10;
+    const num_sat = 20;
     var entities: [num_sat + 2]OrbitalEntity = undefined;
     entities[0] = earth;
     entities[1] = moon;
@@ -67,13 +69,19 @@ pub fn main() anyerror!void {
     const secondsToRun: i32 = 1 * 60 * 60;
     //  endTime: i64 = 2628000; // one month in seconds
 
+    var chem_trails: [num_sat + 2]Trail = undefined;
+    for (&chem_trails) |*t| {
+        t.* = Trail.init();
+        t.post_init();
+    }
+
+    var moon_trail = Trail.init();
+    moon_trail.post_init();
+
     // Main game loop
     while (!rl.windowShouldClose()) { // Detect window close button or ESC key
         // Update
         //----------------------------------------------------------------------------------
-        // TODO: Update your variables here
-        //----------------------------------------------------------------------------------
-
         camera.update(rl.CameraMode.camera_third_person);
 
         integrate(&entities, secondsToRun);
@@ -83,14 +91,14 @@ pub fn main() anyerror!void {
         rl.beginDrawing();
         defer rl.endDrawing();
 
-        rl.clearBackground(rl.Color.white);
+        // text ----------------
+        rl.clearBackground(rl.Color.black);
 
         rl.drawText("Congrats! You created your first window!", 190, 200, 20, rl.Color.light_gray);
         rl.drawText("earth: {}", 190, 240, 20, rl.Color.red);
         rl.drawFPS(10, 10);
-
-        // text -----------
-
+        rl.drawLine3D(rl.Vector3.init(2.0, 0, 0), rl.Vector3.init(4.0, 0, 0), rl.Color.red);
+        // 3D obects -----------
         {
             camera.begin();
             defer camera.end();
@@ -103,16 +111,32 @@ pub fn main() anyerror!void {
                 } else if (index == 1) {
                     color = rl.Color.gray;
                     radius = 0.6;
+
+                    chem_trails[index].append(ent.pos.rlVec());
+                    var old_e: rl.Vector3 = chem_trails[index].list.items[0];
+                    for (chem_trails[index].list.items) |e| {
+                        //rl.drawSphere(e, 0.5, rl.Color.red);
+                        // std.debug.print("trying to print {}\n{}\n{}\n", .{ moon_trail.list.capacity, e, old_e });
+                        rl.drawLine3D(map(old_e), map(e), rl.Color.fromHSV(215.0, 35.0, 39.0));
+                        old_e = e;
+                    }
                 } else {
                     const hue = to(f32, index + 1) / to(f32, entities.len) * 360;
                     color = rl.Color.fromHSV(hue, 0.5, 0.7);
                     radius = 0.3;
+
+                    chem_trails[index].append(ent.pos.rlVec());
+                    var old_e: rl.Vector3 = chem_trails[index].list.items[0];
+                    for (chem_trails[index].list.items) |e| {
+                        //rl.drawSphere(e, 0.5, rl.Color.red);
+                        // std.debug.print("trying to print {}\n{}\n{}\n", .{ moon_trail.list.capacity, e, old_e });
+                        rl.drawLine3D(map(old_e), map(e), color.brightness(rl.math.remap(to(f32, index), 0, 1000, -0.5, 1)));
+                        old_e = e;
+                    }
                 }
                 rl.drawSphere(map(ent.pos.rlVec()), radius, color);
             }
-            // rl.drawSphere(entities[0].pos.rlVec(), 10, rl.Color.blue);
         }
-
         //----------------------------------------------------------------------------------
     }
 }
@@ -139,3 +163,66 @@ fn parseArgs(allocator: std.mem.Allocator) !Args {
 
     return Args{ .num_satellites = std.fmt.parseInt(i32, args[1], 10) catch 20 };
 }
+
+fn foo() !bool {
+    std.debug.print("testing foo\n", .{});
+
+    var buff: [10_000]u8 = undefined;
+    var fixedBuffAllocator = std.heap.FixedBufferAllocator.init(&buff);
+    var trails = std.ArrayList(rl.Vector3).init(fixedBuffAllocator.allocator());
+    defer trails.deinit();
+    try trails.append(rl.Vector3.one());
+    try trails.append(rl.Vector3.zero());
+    try trails.append(rl.Vector3.zero());
+    try trails.append(rl.Vector3.one());
+    try trails.append(rl.Vector3.zero());
+    _ = trails.pop();
+
+    for (trails.items) |trail| {
+        std.debug.print("TEST: {}\n", .{trail});
+    }
+
+    var puet = Trail.init();
+    puet.post_init();
+    defer puet.list.deinit();
+
+    puet.append(rl.Vector3.one());
+    puet.append(rl.Vector3.one());
+    puet.append(rl.Vector3.zero());
+    puet.append(rl.Vector3.one());
+    puet.append(rl.Vector3.zero());
+    puet.append(rl.Vector3.zero());
+
+    for (puet.list.items) |p| {
+        std.debug.print("PUET: {}\n", .{p});
+    }
+    return true;
+}
+
+const Trail = struct {
+    buff: [10_000]u8,
+    fba: std.heap.FixedBufferAllocator,
+    list: std.ArrayList(rl.Vector3),
+
+    pub fn init() Trail {
+        return Trail{ .buff = undefined, .list = undefined, .fba = undefined };
+    }
+
+    pub fn post_init(self: *Trail) void {
+        self.fba = std.heap.FixedBufferAllocator.init(&self.buff);
+        self.list = std.ArrayList(rl.Vector3).init(self.fba.allocator());
+    }
+
+    pub fn append(self: *Trail, item: rl.Vector3) void {
+        self.list.append(item) catch {
+            _ = self.list.orderedRemove(0);
+            self.list.append(item) catch |err| {
+                std.debug.print("no memory, nothing added :( {}\n", .{err});
+            };
+        };
+    }
+};
+
+// fn drawLine(ent: OrbitalEntity) void {
+//     rl.drawLine3D(startPos: Vector3, endPos: Vector3, color: Color)
+// }
