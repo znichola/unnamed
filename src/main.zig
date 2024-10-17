@@ -61,7 +61,6 @@ pub fn main() anyerror!void {
 
     for (entities[2..], 1..) |*ent, index| {
         const fac = rl.math.remap(to(f32, index), 0, to(f32, entities[2..].len), 0.5, 1.2);
-        std.debug.print("thing {}\n", .{fac});
         const r = mpos.rlVec().scale(fac).rotateByAxisAngle(rl.Vector3.init(1.0, 0, 0), fac);
         ent.* = OrbitalEntity.init("s", Vec3.init(r.x, r.y, r.z), mvec, 1e9);
     }
@@ -95,9 +94,10 @@ pub fn main() anyerror!void {
         rl.clearBackground(rl.Color.black);
 
         rl.drawText("Congrats! You created your first window!", 190, 200, 20, rl.Color.light_gray);
-        rl.drawText("earth: {}", 190, 240, 20, rl.Color.red);
+        rl.drawText(rl.textFormat("Earth: %2.05f %2.05f %2.05f", .{ entities[0].pos.x, entities[0].pos.y, entities[0].pos.z }), 190, 240, 20, rl.Color.red);
         rl.drawFPS(10, 10);
         rl.drawLine3D(rl.Vector3.init(2.0, 0, 0), rl.Vector3.init(4.0, 0, 0), rl.Color.red);
+
         // 3D obects -----------
         {
             camera.begin();
@@ -115,9 +115,7 @@ pub fn main() anyerror!void {
                     chem_trails[index].append(ent.pos.rlVec());
                     var old_e: rl.Vector3 = chem_trails[index].list.items[0];
                     for (chem_trails[index].list.items) |e| {
-                        //rl.drawSphere(e, 0.5, rl.Color.red);
-                        // std.debug.print("trying to print {}\n{}\n{}\n", .{ moon_trail.list.capacity, e, old_e });
-                        rl.drawLine3D(map(old_e), map(e), rl.Color.fromHSV(215.0, 35.0, 39.0));
+                        rl.drawLine3D(map(old_e), map(e), rl.Color.gray);
                         old_e = e;
                     }
                 } else {
@@ -128,8 +126,6 @@ pub fn main() anyerror!void {
                     chem_trails[index].append(ent.pos.rlVec());
                     var old_e: rl.Vector3 = chem_trails[index].list.items[0];
                     for (chem_trails[index].list.items) |e| {
-                        //rl.drawSphere(e, 0.5, rl.Color.red);
-                        // std.debug.print("trying to print {}\n{}\n{}\n", .{ moon_trail.list.capacity, e, old_e });
                         rl.drawLine3D(map(old_e), map(e), color.brightness(rl.math.remap(to(f32, index), 0, 1000, -0.5, 1)));
                         old_e = e;
                     }
