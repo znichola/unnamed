@@ -2,6 +2,23 @@
 
 The Orbital Expansion Program (maybe? keep changeing the name), an open source 4x style managment game with "realistic" orbital dynamics.
 
+## Quickstart
+
+Compile and run the project, should work on any platform (tested on windows).
+```
+zig build run
+```
+
+### Web with emscripten
+**Build:** must install [emscripten](https://github.com/emscripten-core/emsdk) and activate (it adds to path).
+```
+zig build -Dtarget=wasm32-emscripten --sysroot "$env:EMSDK\upstream\emscripten"
+```
+**Run:** also using emscripten which will start a server for the project files.
+```
+emrun .\zig-out\htmlout\index.html
+```
+
 ## The stack
 
 Zig + raylib. Tried using raylib with C and it was a massive pain to compile. So zig is nice for it's cross compilation and easy single binary instalation. 

@@ -3,8 +3,8 @@
     .version = "0.0.1",
     .dependencies = .{
         .@"raylib-zig" = .{
-            .url = "https://github.com/Not-Nik/raylib-zig/archive/devel.tar.gz",
-            .hash = "12202b55e516247ae27b38919685b8da1543467cfd15cd92d4d4a840dc236d9dc754",
+            .url = "https://github.com/znichola/raylib-zig-fork/archive/refs/heads/emsdk-win-mkdir-fix.tar.gz",
+            .hash = "1220c3d910dbb1a252e36d6574ebff57c0a63310f4f519f723ee3dbe06ad287f8fd1",
         },
     },
     .paths = .{""},
