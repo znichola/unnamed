@@ -94,7 +94,7 @@ pub fn main() anyerror!void {
         rl.clearBackground(rl.Color.black);
 
         rl.drawText("Congrats! You created your first window!", 190, 200, 20, rl.Color.light_gray);
-        rl.drawText(rl.textFormat("Earth: %2.05f %2.05f %2.05f", .{ entities[0].pos.x, entities[0].pos.y, entities[0].pos.z }), 190, 240, 20, rl.Color.red);
+        rl.drawText(rl.textFormat("Earth: %2.0e %2.0e %2.0e", .{ entities[0].pos.x, entities[0].pos.y, entities[0].pos.z }), 190, 240, 20, rl.Color.red);
         rl.drawFPS(10, 10);
         rl.drawLine3D(rl.Vector3.init(2.0, 0, 0), rl.Vector3.init(4.0, 0, 0), rl.Color.red);
 
@@ -156,7 +156,7 @@ fn parseArgs(allocator: std.mem.Allocator) !Args {
     // pars args into string array, uses allocator for windows compatibility
     const args = try std.process.argsAlloc(allocator);
     defer std.process.argsFree(allocator, args);
-
+    if (args.len == 1) return Args{ .num_satellites = 10 };
     return Args{ .num_satellites = std.fmt.parseInt(i32, args[1], 10) catch 20 };
 }
 
