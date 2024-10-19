@@ -18,6 +18,10 @@ zig build -Dtarget=wasm32-emscripten --sysroot "$env:EMSDK\upstream\emscripten"
 ```
 emrun .\zig-out\htmlout\index.html
 ```
+Flags to add to the `emcc.zig` file, this is requiered for allocators to work.
+```
+"-sUSE_OFFSET_CONVERTER",
+```
 
 ## The stack
 
@@ -26,6 +30,7 @@ Zig + raylib. Tried using raylib with C and it was a massive pain to compile. So
 ## Resources used
 
 [Zig language ref](https://ziglang.org/documentation/master/#Variables)
+[Zig build system tricks](https://ziggit.dev/t/build-system-tricks/3531)
 [N-body wikipedia](https://en.wikipedia.org/wiki/N-body_simulation)
 
 

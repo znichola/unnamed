@@ -1,4 +1,5 @@
 const std = @import("std");
+const builtin = @import("builtin");
 const rl = @import("raylib");
 const OrbitalEntity = @import("orbit.zig").OrbitalEntity;
 const Vec3 = @import("orbit.zig").Vec3;
@@ -9,16 +10,21 @@ const dprint = @import("utils.zig").dprint;
 pub fn main() anyerror!void {
     // Program Initialization
     //--------------------------------------------------------------------------------------
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    const allocator = gpa.allocator();
-    defer _ = gpa.deinit();
 
-    const parsed_args = try parseArgs(allocator);
-    std.debug.print("parsed args: {}\n", parsed_args);
+    // only the c_allocator seems to be compatible with emscripten
+    // Must add this to the emcc.zig flags for emscripten
+    // "-sUSE_OFFSET_CONVERTER",
 
-    // if (try foo()) {
-    //     return;
-    // }
+    var allocator = std.heap.c_allocator;
+
+    const bytes = try allocator.alloc(i32, 100);
+    defer allocator.free(bytes);
+
+    for (bytes, 0..) |*value, i| {
+        value.* = @intCast(i);
+    }
+
+    std.debug.print("printing stuff, {d}", .{bytes});
 
     // Raylib Initialization
     //--------------------------------------------------------------------------------------
@@ -29,8 +35,6 @@ pub fn main() anyerror!void {
     defer rl.closeWindow(); // Close window and OpenGL context
 
     // rl.setTargetFPS(60); // Set our game to run at 60 frames-per-second
-
-    //--------------------------------------------------------------------------------------
 
     var camera = rl.Camera3D{
         .position = rl.Vector3.init(0, 0, 20),
@@ -51,7 +55,7 @@ pub fn main() anyerror!void {
     moon.prt();
     earth.prt();
 
-    const num_sat = 20;
+    const num_sat = 10;
     var entities: [num_sat + 2]OrbitalEntity = undefined;
     entities[0] = earth;
     entities[1] = moon;
@@ -66,16 +70,6 @@ pub fn main() anyerror!void {
     }
 
     const secondsToRun: i32 = 1 * 60 * 60;
-    //  endTime: i64 = 2628000; // one month in seconds
-
-    var chem_trails: [num_sat + 2]Trail = undefined;
-    for (&chem_trails) |*t| {
-        t.* = Trail.init();
-        t.post_init();
-    }
-
-    var moon_trail = Trail.init();
-    moon_trail.post_init();
 
     // Main game loop
     while (!rl.windowShouldClose()) { // Detect window close button or ESC key
@@ -111,24 +105,10 @@ pub fn main() anyerror!void {
                 } else if (index == 1) {
                     color = rl.Color.gray;
                     radius = 0.6;
-
-                    chem_trails[index].append(ent.pos.rlVec());
-                    var old_e: rl.Vector3 = chem_trails[index].list.items[0];
-                    for (chem_trails[index].list.items) |e| {
-                        rl.drawLine3D(map(old_e), map(e), rl.Color.gray);
-                        old_e = e;
-                    }
                 } else {
                     const hue = to(f32, index + 1) / to(f32, entities.len) * 360;
                     color = rl.Color.fromHSV(hue, 0.5, 0.7);
                     radius = 0.3;
-
-                    chem_trails[index].append(ent.pos.rlVec());
-                    var old_e: rl.Vector3 = chem_trails[index].list.items[0];
-                    for (chem_trails[index].list.items) |e| {
-                        rl.drawLine3D(map(old_e), map(e), color.brightness(rl.math.remap(to(f32, index), 0, 1000, -0.5, 1)));
-                        old_e = e;
-                    }
                 }
                 rl.drawSphere(map(ent.pos.rlVec()), radius, color);
             }
@@ -147,78 +127,3 @@ fn map(input: rl.Vector3) rl.Vector3 {
 fn to(T: type, n: anytype) T {
     return @as(T, @floatFromInt(n));
 }
-
-const Args = struct {
-    num_satellites: i32,
-};
-
-fn parseArgs(allocator: std.mem.Allocator) !Args {
-    // pars args into string array, uses allocator for windows compatibility
-    const args = try std.process.argsAlloc(allocator);
-    defer std.process.argsFree(allocator, args);
-    if (args.len == 1) return Args{ .num_satellites = 10 };
-    return Args{ .num_satellites = std.fmt.parseInt(i32, args[1], 10) catch 20 };
-}
-
-fn foo() !bool {
-    std.debug.print("testing foo\n", .{});
-
-    var buff: [10_000]u8 = undefined;
-    var fixedBuffAllocator = std.heap.FixedBufferAllocator.init(&buff);
-    var trails = std.ArrayList(rl.Vector3).init(fixedBuffAllocator.allocator());
-    defer trails.deinit();
-    try trails.append(rl.Vector3.one());
-    try trails.append(rl.Vector3.zero());
-    try trails.append(rl.Vector3.zero());
-    try trails.append(rl.Vector3.one());
-    try trails.append(rl.Vector3.zero());
-    _ = trails.pop();
-
-    for (trails.items) |trail| {
-        std.debug.print("TEST: {}\n", .{trail});
-    }
-
-    var puet = Trail.init();
-    puet.post_init();
-    defer puet.list.deinit();
-
-    puet.append(rl.Vector3.one());
-    puet.append(rl.Vector3.one());
-    puet.append(rl.Vector3.zero());
-    puet.append(rl.Vector3.one());
-    puet.append(rl.Vector3.zero());
-    puet.append(rl.Vector3.zero());
-
-    for (puet.list.items) |p| {
-        std.debug.print("PUET: {}\n", .{p});
-    }
-    return true;
-}
-
-const Trail = struct {
-    buff: [10_000]u8,
-    fba: std.heap.FixedBufferAllocator,
-    list: std.ArrayList(rl.Vector3),
-
-    pub fn init() Trail {
-        return Trail{ .buff = undefined, .list = undefined, .fba = undefined };
-    }
-
-    pub fn post_init(self: *Trail) void {
-        self.fba = std.heap.FixedBufferAllocator.init(&self.buff);
-        self.list = std.ArrayList(rl.Vector3).init(self.fba.allocator());
-    }
-
-    pub fn append(self: *Trail, item: rl.Vector3) void {
-        self.list.append(item) catch {
-            _ = self.list.orderedRemove(0);
-            self.list.append(item) catch |err| {
-                std.debug.print("no memory, nothing added :( {}\n", .{err});
-            };
-        };
-    }
-};
-
-// fn drawLine(ent: OrbitalEntity) void {
-//     rl.drawLine3D(startPos: Vector3, endPos: Vector3, color: Color)
-// }
