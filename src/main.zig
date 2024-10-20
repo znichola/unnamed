@@ -2,7 +2,6 @@ const std = @import("std");
 const builtin = @import("builtin");
 const rl = @import("raylib");
 const OrbitalEntity = @import("orbit.zig").OrbitalEntity;
-const Vec3 = @import("orbit.zig").Vec3;
 const integrate = @import("orbit.zig").integrate;
 
 const dprint = @import("utils.zig").dprint;
@@ -49,8 +48,8 @@ pub fn main() anyerror!void {
 
     std.debug.print("Hello Orbit!\n", .{});
 
-    const earth = OrbitalEntity.init("Earth", Vec3.init(0, 0, 0), Vec3.init(0, 0, 0), 5.972e24);
-    const moon = OrbitalEntity.init("Moon", Vec3.init(0, 384.4e6, 0), Vec3.init(1e3, 0, 0), 7.38e22);
+    const earth = OrbitalEntity.init("Earth", rl.Vector3.init(0, 0, 0), rl.Vector3.init(0, 0, 0), 5.972e24);
+    const moon = OrbitalEntity.init("Moon", rl.Vector3.init(0, 384.4e6, 0), rl.Vector3.init(1e3, 0, 0), 7.38e22);
 
     moon.prt();
     earth.prt();
@@ -60,13 +59,13 @@ pub fn main() anyerror!void {
     entities[0] = earth;
     entities[1] = moon;
 
-    const mpos = Vec3.init(0, 384.4e6, 0);
-    const mvec = Vec3.init(1e3, 0, 0);
+    const mpos = rl.Vector3.init(0, 384.4e6, 0);
+    const mvec = rl.Vector3.init(1e3, 0, 0);
 
     for (entities[2..], 1..) |*ent, index| {
         const fac = rl.math.remap(to(f32, index), 0, to(f32, entities[2..].len), 0.5, 1.2);
-        const r = mpos.rlVec().scale(fac).rotateByAxisAngle(rl.Vector3.init(1.0, 0, 0), fac);
-        ent.* = OrbitalEntity.init("s", Vec3.init(r.x, r.y, r.z), mvec, 1e9);
+        const r = mpos.scale(fac).rotateByAxisAngle(rl.Vector3.init(1.0, 0, 0), fac);
+        ent.* = OrbitalEntity.init("s", rl.Vector3.init(r.x, r.y, r.z), mvec, 1e9);
     }
 
     const secondIncraments = [_]i32{ 1, 60, 15 * 60, 60 * 60, 6 * 60 * 60, 1 * 24 * 60 * 60, 15 * 24 * 60 * 68 };
@@ -116,7 +115,7 @@ pub fn main() anyerror!void {
                     color = rl.Color.fromHSV(hue, 0.5, 0.7);
                     radius = 0.3;
                 }
-                rl.drawSphere(map(ent.pos.rlVec()), radius, color);
+                rl.drawSphere(map(ent.pos), radius, color);
             }
         }
         //----------------------------------------------------------------------------------
