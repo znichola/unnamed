@@ -34,7 +34,7 @@ pub fn main() anyerror!void {
     rl.initWindow(screenWidth, screenHeight, "raylib-zig [core] example - basic window");
     defer rl.closeWindow(); // Close window and OpenGL context
 
-    // rl.setTargetFPS(60); // Set our game to run at 60 frames-per-second
+    rl.setTargetFPS(60); // Set our game to run at 60 frames-per-second
 
     var camera = rl.Camera3D{
         .position = rl.Vector3.init(0, 0, 20),
@@ -69,7 +69,8 @@ pub fn main() anyerror!void {
         ent.* = OrbitalEntity.init("s", Vec3.init(r.x, r.y, r.z), mvec, 1e9);
     }
 
-    const secondsToRun: i32 = 1 * 60 * 60;
+    const secondIncraments = [_]i32{ 1, 60, 15 * 60, 60 * 60, 6 * 60 * 60, 1 * 24 * 60 * 60, 15 * 24 * 60 * 68 };
+    var incramentIndex: usize = 3;
 
     // Main game loop
     while (!rl.windowShouldClose()) { // Detect window close button or ESC key
@@ -77,7 +78,14 @@ pub fn main() anyerror!void {
         //----------------------------------------------------------------------------------
         camera.update(rl.CameraMode.camera_third_person);
 
-        integrate(&entities, secondsToRun);
+        if (rl.isKeyPressed(rl.KeyboardKey.key_up) and incramentIndex < secondIncraments.len) {
+            incramentIndex += 1;
+        }
+        if (rl.isKeyPressed(rl.KeyboardKey.key_down) and incramentIndex > 0) {
+            incramentIndex -= 1;
+        }
+
+        integrate(&entities, secondIncraments[incramentIndex]);
 
         // Draw
         //----------------------------------------------------------------------------------
@@ -87,10 +95,8 @@ pub fn main() anyerror!void {
         // text ----------------
         rl.clearBackground(rl.Color.black);
 
-        rl.drawText("Congrats! You created your first window!", 190, 200, 20, rl.Color.light_gray);
-        rl.drawText(rl.textFormat("Earth: %2.0e %2.0e %2.0e", .{ entities[0].pos.x, entities[0].pos.y, entities[0].pos.z }), 190, 240, 20, rl.Color.red);
         rl.drawFPS(10, 10);
-        rl.drawLine3D(rl.Vector3.init(2.0, 0, 0), rl.Vector3.init(4.0, 0, 0), rl.Color.red);
+        rl.drawText(rl.textFormat("Frame: %s", .{reableTime(secondIncraments[incramentIndex])}), 10, 40, 20, rl.Color.blue);
 
         // 3D obects -----------
         {
@@ -115,6 +121,20 @@ pub fn main() anyerror!void {
         }
         //----------------------------------------------------------------------------------
     }
+}
+
+fn reableTime(seconds: i32) [*:0]const u8 {
+    if (seconds < 60) {
+        return rl.textFormat("%d seconds", .{seconds});
+    } else if (seconds < 60 * 60) {
+        return rl.textFormat("%d minutes", .{@divTrunc(seconds, 60)});
+    } else if (seconds < 60 * 60 * 24) {
+        return rl.textFormat("%d hours", .{@divTrunc(seconds, 60 * 60)});
+    } else {
+        return rl.textFormat("%d days", .{@divTrunc(seconds, 60 * 60 * 24)});
+    }
+
+    rl.textFormat("Seconds / frame: %d", .{});
 }
 
 // map input coord to screenspace scale

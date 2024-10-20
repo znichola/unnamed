@@ -13,6 +13,8 @@ pub fn build(b: *std.Build) !void {
     const raylib = raylib_dep.module("raylib");
     const raylib_artifact = raylib_dep.artifact("raylib");
 
+    // raylib_artifact.defineCMacro("SUPPORT_CUSTOM_FRAME_CONTROL", null);
+
     //web exports are completely separate
     if (target.query.os_tag == .emscripten) {
         const exe_lib = rlz.emcc.compileForEmscripten(b, "OOEP", "src/main.zig", target, optimize);

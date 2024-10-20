@@ -29,9 +29,9 @@ Zig + raylib. Tried using raylib with C and it was a massive pain to compile. So
 
 ## Resources used
 
-[Zig language ref](https://ziglang.org/documentation/master/#Variables)
-[Zig build system tricks](https://ziggit.dev/t/build-system-tricks/3531)
-[N-body wikipedia](https://en.wikipedia.org/wiki/N-body_simulation)
+- [Zig language ref](https://ziglang.org/documentation/master/#Variables)
+- [Zig build system tricks](https://ziggit.dev/t/build-system-tricks/3531)
+- [N-body wikipedia](https://en.wikipedia.org/wiki/N-body_simulation)
 
 
 ## TODO
@@ -42,12 +42,17 @@ Stoneshard in space, that's sort of the vibe I'm going for. At least right now. 
    - [ ] Comptime import jovian system parameters.
 - [ ] A player controlled ship.
 - [ ] UI to show some information and allows for switching certain fetures on/off.
-- [ ] 
+- [ ] ... 
 
 
 ## Ephemeris DATA
 
 The JPL is the ultimate source for precalculated ephemerides for [satellitesi (eg. moons of jupiter)](https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/satellites/), and this is very cool [planetary poisition from 13000 BCE to 17000 AD](https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/) 30k years of orbits calculated! And [docs on how to use the .spk files](https://naif.jpl.nasa.gov/naif/tutorials.html).
+
+The principal tool in the cspice toolkit is [spkef_c](https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/cspice/spklef_c.html) for reading the `.bsp` file. That documention has example code that shows pretty much what needs to be done. The there is some untested [chat gpt code](https://chatgpt.com/share/67152f22-76d0-8004-9fa2-5a4dacaf85c1), but it seems to be a bunch of bs.
+
+
+
 
 ### I'm distracted
 
