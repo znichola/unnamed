@@ -7,6 +7,8 @@ The Orbital Expansion Program (maybe? keep changeing the name), an open source 4
 Compile and run the project, should work on any platform (tested on windows).
 ```
 zig build run
+
+zig build -Doptimize=ReleaseFast run
 ```
 
 ### Web with emscripten

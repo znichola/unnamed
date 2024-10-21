@@ -33,7 +33,7 @@ pub fn main() anyerror!void {
     rl.initWindow(screenWidth, screenHeight, "raylib-zig [core] example - basic window");
     defer rl.closeWindow(); // Close window and OpenGL context
 
-    rl.setTargetFPS(60); // Set our game to run at 60 frames-per-second
+    // rl.setTargetFPS(60); // Set our game to run at 60 frames-per-second
 
     var camera = rl.Camera3D{
         .position = rl.Vector3.init(0, 0, 20),
@@ -54,7 +54,7 @@ pub fn main() anyerror!void {
     moon.prt();
     earth.prt();
 
-    const num_sat = 10;
+    const num_sat = 200;
     var entities: [num_sat + 2]OrbitalEntity = undefined;
     entities[0] = earth;
     entities[1] = moon;
