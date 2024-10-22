@@ -2,7 +2,7 @@ const std = @import("std");
 const builtin = @import("builtin");
 const rl = @import("raylib");
 const OrbitalEntity = @import("orbit.zig").OrbitalEntity;
-const integrate = @import("orbit.zig").integrate;
+const orbit = @import("orbit.zig");
 
 const dprint = @import("utils.zig").dprint;
 
@@ -59,6 +59,8 @@ pub fn main() anyerror!void {
     entities[0] = earth;
     entities[1] = moon;
 
+    var total_time: i32 = 0;
+
     const mpos = rl.Vector3.init(0, 384.4e6, 0);
     const mvec = rl.Vector3.init(1e3, 0, 0);
 
@@ -84,7 +86,11 @@ pub fn main() anyerror!void {
             incramentIndex -= 1;
         }
 
-        integrate(&entities, secondIncraments[incramentIndex]);
+        orbit.integrate(&entities, secondIncraments[incramentIndex]);
+
+        total_time += secondIncraments[incramentIndex];
+        const kenetic_energy = orbit.calculate_kenetic_energy(&entities);
+        const gravitiationl_energy = orbit.calculate_potential_energy(&entities);
 
         // Draw
         //----------------------------------------------------------------------------------
@@ -96,7 +102,10 @@ pub fn main() anyerror!void {
 
         rl.drawFPS(10, 10);
         rl.drawText(rl.textFormat("Frame: %s", .{reableTime(secondIncraments[incramentIndex])}), 10, 40, 20, rl.Color.blue);
-
+        rl.drawText(rl.textFormat("Simulation time: %s", .{reableTime(total_time)}), 10, 60, 20, rl.Color.blue);
+        rl.drawText(rl.textFormat("Total kenetic energy: %.1e", .{kenetic_energy}), 10, 80, 20, rl.Color.yellow);
+        rl.drawText(rl.textFormat("Total gravitational potential energy: %.1e", .{gravitiationl_energy}), 10, 100, 20, rl.Color.orange);
+        rl.drawText(rl.textFormat("Total energy: %.2e", .{kenetic_energy + gravitiationl_energy}), 10, 120, 20, rl.Color.pink);
         // 3D obects -----------
         {
             camera.begin();
@@ -129,8 +138,10 @@ fn reableTime(seconds: i32) [*:0]const u8 {
         return rl.textFormat("%d minutes", .{@divTrunc(seconds, 60)});
     } else if (seconds < 60 * 60 * 24) {
         return rl.textFormat("%d hours", .{@divTrunc(seconds, 60 * 60)});
-    } else {
+    } else if (seconds < 60 * 60 * 24 * 365) {
         return rl.textFormat("%d days", .{@divTrunc(seconds, 60 * 60 * 24)});
+    } else {
+        return rl.textFormat("%d years", .{@divTrunc(seconds, 60 * 60 * 24 * 365)});
     }
 
     rl.textFormat("Seconds / frame: %d", .{});

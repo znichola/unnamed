@@ -35,6 +35,9 @@ Zig + raylib. Tried using raylib with C and it was a massive pain to compile. So
 - [Zig build system tricks](https://ziggit.dev/t/build-system-tricks/3531)
 - [N-body wikipedia](https://en.wikipedia.org/wiki/N-body_simulation)
 
+### Back to school
+
+- [Gravitation energy](https://physics.info/gravitation-energy/)
 
 ## TODO
 

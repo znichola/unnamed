@@ -79,6 +79,31 @@ pub fn integrate(entities: []OrbitalEntity, t_end: i32) void {
     }
 }
 
+pub fn calculate_kenetic_energy(entities: []const OrbitalEntity) f32 {
+    var sum: f32 = 0;
+    for (entities) |ent| {
+        const vel_mag = std.math.sqrt(ent.vel.x * ent.vel.x + ent.vel.y * ent.vel.y + ent.vel.z * ent.vel.z);
+        sum += 0.5 * ent.mass * vel_mag * vel_mag;
+    }
+    return sum;
+}
+
+pub fn calculate_potential_energy(entities: []const OrbitalEntity) f32 {
+    const BIG_G: f32 = 6.67E-11;
+    var total_potential_energy: f32 = 0;
+
+    // Calculate total potential energy (between each pair of entities)
+    for (entities, 0..) |e1, i| {
+        for (entities[i + 1 ..]) |e2| {
+            const distance = e1.pos.distance(e2.pos);
+            if (distance != 0) {
+                total_potential_energy += BIG_G * e1.mass * e2.mass / distance;
+            }
+        }
+    }
+    return total_potential_energy;
+}
+
 fn prtVector3(vec: rl.Vector3) void {
     std.debug.print("({}, {}, {})\n", vec);
 }
