@@ -1,8 +1,10 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const rl = @import("raylib");
+
 const OrbitalEntity = @import("orbit.zig").OrbitalEntity;
 const orbit = @import("orbit.zig");
+const ui = @import("ui.zig");
 
 const dprint = @import("utils.zig").dprint;
 
@@ -24,6 +26,8 @@ pub fn main() anyerror!void {
     }
 
     std.debug.print("printing stuff, {d}", .{bytes});
+
+    var ui_options = ui.Options.init();
 
     // Raylib Initialization
     //--------------------------------------------------------------------------------------
@@ -86,11 +90,13 @@ pub fn main() anyerror!void {
             incramentIndex -= 1;
         }
 
+        ui_options.show_fps = ui_options.show_fps != rl.isKeyPressed(rl.KeyboardKey.key_f);
+        ui_options.show_orbital_stats = ui_options.show_orbital_stats != rl.isKeyPressed(rl.KeyboardKey.key_i);
+        ui_options.show_sim = ui_options.show_sim != rl.isKeyPressed(rl.KeyboardKey.key_o);
+
         orbit.integrate(&entities, secondIncraments[incramentIndex]);
 
         total_time += secondIncraments[incramentIndex];
-        const kenetic_energy = orbit.calculate_kenetic_energy(&entities);
-        const gravitiationl_energy = orbit.calculate_potential_energy(&entities);
 
         // Draw
         //----------------------------------------------------------------------------------
@@ -100,14 +106,19 @@ pub fn main() anyerror!void {
         // text ----------------
         rl.clearBackground(rl.Color.black);
 
-        rl.drawFPS(10, 10);
-        rl.drawText(rl.textFormat("Frame: %s", .{reableTime(secondIncraments[incramentIndex])}), 10, 40, 20, rl.Color.blue);
-        rl.drawText(rl.textFormat("Simulation time: %s", .{reableTime(total_time)}), 10, 60, 20, rl.Color.blue);
-        rl.drawText(rl.textFormat("Total kenetic energy: %.1e", .{kenetic_energy}), 10, 80, 20, rl.Color.yellow);
-        rl.drawText(rl.textFormat("Total gravitational potential energy: %.1e", .{gravitiationl_energy}), 10, 100, 20, rl.Color.orange);
-        rl.drawText(rl.textFormat("Total energy: %.2e", .{kenetic_energy + gravitiationl_energy}), 10, 120, 20, rl.Color.pink);
+        if (ui_options.show_fps) rl.drawFPS(10, 10);
+
+        if (ui_options.show_orbital_stats) ui.orbitalStatsWriter(
+            &entities,
+            secondIncraments[incramentIndex],
+            total_time,
+            10,
+            35,
+            20,
+        );
+
         // 3D obects -----------
-        {
+        if (ui_options.show_sim) {
             camera.begin();
             defer camera.end();
             for (entities, 0..) |ent, index| {
@@ -129,22 +140,6 @@ pub fn main() anyerror!void {
         }
         //----------------------------------------------------------------------------------
     }
-}
-
-fn reableTime(seconds: i32) [*:0]const u8 {
-    if (seconds < 60) {
-        return rl.textFormat("%d seconds", .{seconds});
-    } else if (seconds < 60 * 60) {
-        return rl.textFormat("%d minutes", .{@divTrunc(seconds, 60)});
-    } else if (seconds < 60 * 60 * 24) {
-        return rl.textFormat("%d hours", .{@divTrunc(seconds, 60 * 60)});
-    } else if (seconds < 60 * 60 * 24 * 365) {
-        return rl.textFormat("%d days", .{@divTrunc(seconds, 60 * 60 * 24)});
-    } else {
-        return rl.textFormat("%d years", .{@divTrunc(seconds, 60 * 60 * 24 * 365)});
-    }
-
-    rl.textFormat("Seconds / frame: %d", .{});
 }
 
 // map input coord to screenspace scale
