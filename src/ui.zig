@@ -22,6 +22,50 @@ pub fn orbitalStatsWriter(
     tc.drawTextFormat("Total    energy: %.1e", .{kenetic_energy + gravitiationl_energy});
 }
 
+//  if (rl.isMouseButtonPressed(rl.MouseButton.mouse_button_left)) {
+//             if (!collision.hit) {
+//                 ray = rl.getScreenToWorldRay(rl.getMousePosition(), camera);
+
+//                 // Check collision between ray and box
+//                 collision = rl.getRayCollisionBox(ray, rl.BoundingBox{
+//                     .max = rl.Vector3.init(cubePosition.x - cubeSize.x / 2, cubePosition.y - cubeSize.y / 2, cubePosition.z - cubeSize.z / 2),
+//                     .min = rl.Vector3.init(cubePosition.x + cubeSize.x / 2, cubePosition.y + cubeSize.y / 2, cubePosition.z + cubeSize.z / 2),
+//                 });
+//             } else collision.hit = false;
+//         }
+
+pub const Selection = struct {
+    ray: rl.Ray,
+    collision: rl.RayCollision,
+    entity: usize,
+
+    pub fn get(entities: []orbit.OrbitalEntity, camera: rl.Camera3D) ?Selection {
+        if (rl.isMouseButtonPressed(rl.MouseButton.mouse_button_left)) {
+            std.debug.print("Clicked button to select item\n", .{});
+            const ray = rl.getScreenToWorldRay(rl.getMousePosition(), camera);
+            for (entities, 0..) |ent, i| {
+                const collision = rl.getRayCollisionSphere(
+                    ray,
+                    map(ent.pos),
+                    0.2,
+                );
+                if (collision.hit) return Selection{
+                    .ray = ray,
+                    .collision = collision,
+                    .entity = i,
+                };
+            }
+        }
+        return null;
+    }
+};
+
+// map input coord to screenspace scale
+fn map(input: rl.Vector3) rl.Vector3 {
+    const dist_unit = 384.4e6;
+    return input.scale(10.0 / dist_unit);
+}
+
 const TextColum = struct {
     top_left_pos_x: i32,
     font_size: i32,
