@@ -28,6 +28,7 @@ pub fn main() anyerror!void {
     std.debug.print("printing stuff, {d}", .{bytes});
 
     var ui_options = ui.Options.init();
+    var selection: ?ui.Selection = null;
 
     // Raylib Initialization
     //--------------------------------------------------------------------------------------
@@ -90,10 +91,18 @@ pub fn main() anyerror!void {
             incramentIndex -= 1;
         }
 
+        if (ui.Selection.get(&entities, camera)) |selected| {
+            selection = selected;
+            std.debug.print("selected : .{any}\n", .{selection});
+        }
+
+        if (rl.isMouseButtonPressed(rl.MouseButton.mouse_button_right)) selection = null;
+
         ui_options.show_fps = ui_options.show_fps != rl.isKeyPressed(rl.KeyboardKey.key_f);
         ui_options.show_orbital_stats = ui_options.show_orbital_stats != rl.isKeyPressed(rl.KeyboardKey.key_i);
         ui_options.show_sim = ui_options.show_sim != rl.isKeyPressed(rl.KeyboardKey.key_o);
 
+        // Calculate orbit ticks
         orbit.integrate(&entities, secondIncraments[incramentIndex]);
 
         total_time += secondIncraments[incramentIndex];
@@ -117,10 +126,25 @@ pub fn main() anyerror!void {
             20,
         );
 
+        if (selection.?.collision.hit) {
+            std.debug.print("printing stats becuse we have selection\n", .{});
+        }
+
         // 3D obects -----------
         if (ui_options.show_sim) {
             camera.begin();
             defer camera.end();
+
+            if (selection) |selected| {
+                rl.drawSphereWires(
+                    map(entities[selected.entity].pos),
+                    0.5,
+                    4,
+                    4,
+                    rl.Color.green,
+                );
+            }
+
             for (entities, 0..) |ent, index| {
                 var color: rl.Color = undefined;
                 var radius: f32 = undefined;

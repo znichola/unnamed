@@ -14,6 +14,8 @@ zig build -Doptimize=ReleaseFast run
 ### Web with emscripten
 **Build:** must install [emscripten](https://github.com/emscripten-core/emsdk) and activate (it adds to path).
 ```
+../emsdk_path/emsdk activate
+
 zig build -Dtarget=wasm32-emscripten --sysroot "$env:EMSDK\upstream\emscripten"
 ```
 **Run:** also using emscripten which will start a server for the project files.
