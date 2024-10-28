@@ -93,6 +93,9 @@ pub const Options = struct {
     show_orbital_stats: bool,
     show_fps: bool,
     show_sim: bool,
+    dt: Dt,
+
+    // for testing
     float_tester: f32,
     int_tester: i32,
 
@@ -103,9 +106,63 @@ pub const Options = struct {
             .show_sim = true,
             .float_tester = 0.01,
             .int_tester = 0,
+            .dt = Dt.init(),
         };
     }
 };
+
+const Dt = struct {
+    incraments: [7]i32,
+    index: usize,
+
+    pub fn init() Dt {
+        return Dt{
+            .incraments = [_]i32{ 60, 2 * 60, 15 * 60, 60 * 60, 6 * 60 * 60, 1 * 24 * 60 * 60, 15 * 24 * 60 * 68 },
+            .index = 3,
+        };
+    }
+
+    pub fn value(self: *Dt) i32 {
+        return self.incraments[self.index];
+    }
+
+    pub fn dtUp(self: *Dt) void {
+        if (self.index < self.incraments.len - 1) {
+            self.index += 1;
+        }
+    }
+
+    pub fn dtDown(self: *Dt) void {
+        if (self.index > 0) {
+            self.index -= 1;
+        }
+    }
+};
+
+pub fn processInputs(
+    options: *Options,
+    selection: *?Selection,
+    entities: []orbit.OrbitalEntity,
+    camera: *rl.Camera3D,
+) void {
+    if (rl.isKeyPressed(rl.KeyboardKey.key_up)) options.dt.dtUp();
+    if (rl.isKeyPressed(rl.KeyboardKey.key_down)) options.dt.dtDown();
+
+    if (rl.isKeyPressed(rl.KeyboardKey.key_j)) options.float_tester += 0.001;
+    if (rl.isKeyPressed(rl.KeyboardKey.key_k)) options.float_tester -= 0.001;
+
+    if (Selection.get(entities, camera.*)) |s| selection.* = s;
+    if (rl.isMouseButtonPressed(rl.MouseButton.mouse_button_right)) selection.* = null;
+
+    if (selection.*) |selected| {
+        camera.target = map(entities[selected.entity].pos);
+        selection.*.?.old_entity = entities[selected.entity];
+    }
+
+    options.show_fps = options.show_fps != rl.isKeyPressed(rl.KeyboardKey.key_f);
+    options.show_orbital_stats = options.show_orbital_stats != rl.isKeyPressed(rl.KeyboardKey.key_i);
+    options.show_sim = options.show_sim != rl.isKeyPressed(rl.KeyboardKey.key_o);
+}
 
 fn reableTime(seconds: i32) [*:0]const u8 {
     if (seconds < 60) {

@@ -77,47 +77,21 @@ pub fn main() anyerror!void {
         ent.* = OrbitalEntity.init("s", rl.Vector3.init(r.x, r.y, r.z), mvec, 1e9);
     }
 
-    const secondIncraments = [_]i32{ 60, 2 * 60, 15 * 60, 60 * 60, 6 * 60 * 60, 1 * 24 * 60 * 60, 15 * 24 * 60 * 68 };
-    var incramentIndex: usize = 3;
-
     // Main game loop
     while (!rl.windowShouldClose()) { // Detect window close button or ESC key
         // Update
         //----------------------------------------------------------------------------------
 
-        if (rl.isKeyPressed(rl.KeyboardKey.key_up) and incramentIndex < secondIncraments.len - 1) {
-            incramentIndex += 1;
-        }
-        if (rl.isKeyPressed(rl.KeyboardKey.key_down) and incramentIndex > 0) {
-            incramentIndex -= 1;
-        }
+        // Process keyboards & mouse inputs
+        ui.processInputs(&ui_options, &selection, &entities, &camera);
 
-        if (rl.isKeyPressed(rl.KeyboardKey.key_j)) ui_options.float_tester += 0.001;
-        if (rl.isKeyPressed(rl.KeyboardKey.key_k)) ui_options.float_tester -= 0.001;
-
-        if (ui.Selection.get(&entities, camera)) |selected| {
-            selection = selected;
-        }
-
-        if (rl.isMouseButtonPressed(rl.MouseButton.mouse_button_right)) {
-            selection = null;
-        }
-
-        if (selection) |selected| {
-            camera.target = map(entities[selected.entity].pos);
-            selection.?.old_entity = entities[selected.entity];
-        }
-
+        // Update camera with mouse for look movement
         camera.update(rl.CameraMode.camera_third_person);
 
-        ui_options.show_fps = ui_options.show_fps != rl.isKeyPressed(rl.KeyboardKey.key_f);
-        ui_options.show_orbital_stats = ui_options.show_orbital_stats != rl.isKeyPressed(rl.KeyboardKey.key_i);
-        ui_options.show_sim = ui_options.show_sim != rl.isKeyPressed(rl.KeyboardKey.key_o);
-
         // Calculate orbit ticks
-        orbit.integrate(&entities, secondIncraments[incramentIndex]);
+        orbit.integrate(&entities, ui_options.dt.value());
 
-        total_time += secondIncraments[incramentIndex];
+        total_time += ui_options.dt.value();
 
         // Draw
         //----------------------------------------------------------------------------------
@@ -132,16 +106,12 @@ pub fn main() anyerror!void {
         if (ui_options.show_orbital_stats) ui.orbitalStatsWriter(
             &entities,
             selection,
-            secondIncraments[incramentIndex],
+            ui_options.dt.value(),
             total_time,
             10,
             35,
             20,
         );
-
-        // if (selection != null and selection.?.collision.hit) {
-        //     std.debug.print("printing stats becuse we have selection\n", .{});
-        // }
 
         // 3D obects -----------
         if (ui_options.show_sim) {
@@ -185,7 +155,7 @@ pub fn main() anyerror!void {
 
                 // Calculate & draw acceleration vector for selection
                 if (selected.old_entity) |old_ent| {
-                    const dt: f32 = @floatFromInt(secondIncraments[incramentIndex]);
+                    const dt: f32 = @floatFromInt(ui_options.dt.value());
                     const dv = s.vel.subtract(old_ent.vel);
                     const acceleration = dv.scale(1 / dt).scale(100);
                     rl.drawLine3D(
