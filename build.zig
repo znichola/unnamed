@@ -14,6 +14,10 @@ pub fn build(b: *std.Build) !void {
     const raylib_artifact = raylib_dep.artifact("raylib");
 
     // raylib_artifact.defineCMacro("SUPPORT_CUSTOM_FRAME_CONTROL", null);
+    // print raylib c macro flags
+    for (raylib_artifact.root_module.c_macros.items) |m| {
+        std.debug.print("C MACROS: {s}\n", .{m});
+    }
 
     //web exports are completely separate
     if (target.query.os_tag == .emscripten) {

@@ -4,6 +4,7 @@ const orbit = @import("orbit.zig");
 
 pub fn orbitalStatsWriter(
     entities: []orbit.OrbitalEntity,
+    selection: ?Selection,
     tick_time: i32,
     total_time: i32,
     x: i32,
@@ -20,24 +21,18 @@ pub fn orbitalStatsWriter(
     tc.drawTextFormat("Kinetic  energy: %.1e", .{kenetic_energy});
     tc.drawTextFormat("Grav.    energy: %.1e", .{gravitiationl_energy});
     tc.drawTextFormat("Total    energy: %.1e", .{kenetic_energy + gravitiationl_energy});
+    if (selection) |selected| {
+        const s = entities[selected.entity];
+        tc.drawTextFormat("Selected", .{});
+        tc.drawTextFormat("Velocity m/s   : %3.1f", .{s.vel.length()});
+    }
 }
-
-//  if (rl.isMouseButtonPressed(rl.MouseButton.mouse_button_left)) {
-//             if (!collision.hit) {
-//                 ray = rl.getScreenToWorldRay(rl.getMousePosition(), camera);
-
-//                 // Check collision between ray and box
-//                 collision = rl.getRayCollisionBox(ray, rl.BoundingBox{
-//                     .max = rl.Vector3.init(cubePosition.x - cubeSize.x / 2, cubePosition.y - cubeSize.y / 2, cubePosition.z - cubeSize.z / 2),
-//                     .min = rl.Vector3.init(cubePosition.x + cubeSize.x / 2, cubePosition.y + cubeSize.y / 2, cubePosition.z + cubeSize.z / 2),
-//                 });
-//             } else collision.hit = false;
-//         }
 
 pub const Selection = struct {
     ray: rl.Ray,
     collision: rl.RayCollision,
     entity: usize,
+    old_entity: ?orbit.OrbitalEntity,
 
     pub fn get(entities: []orbit.OrbitalEntity, camera: rl.Camera3D) ?Selection {
         if (rl.isMouseButtonPressed(rl.MouseButton.mouse_button_left)) {
@@ -53,6 +48,7 @@ pub const Selection = struct {
                     .ray = ray,
                     .collision = collision,
                     .entity = i,
+                    .old_entity = null,
                 };
             }
         }
@@ -97,12 +93,16 @@ pub const Options = struct {
     show_orbital_stats: bool,
     show_fps: bool,
     show_sim: bool,
+    float_tester: f32,
+    int_tester: i32,
 
     pub fn init() Options {
         return Options{
             .show_fps = true,
             .show_orbital_stats = false,
             .show_sim = true,
+            .float_tester = 0.01,
+            .int_tester = 0,
         };
     }
 };

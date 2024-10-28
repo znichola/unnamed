@@ -16,16 +16,16 @@ pub fn main() anyerror!void {
     // Must add this to the emcc.zig flags for emscripten
     // "-sUSE_OFFSET_CONVERTER",
 
-    var allocator = std.heap.c_allocator;
+    // var allocator = std.heap.c_allocator;
 
-    const bytes = try allocator.alloc(i32, 100);
-    defer allocator.free(bytes);
+    // const bytes = try allocator.alloc(i32, 100);
+    // defer allocator.free(bytes);
 
-    for (bytes, 0..) |*value, i| {
-        value.* = @intCast(i);
-    }
+    // for (bytes, 0..) |*value, i| {
+    //     value.* = @intCast(i);
+    // }
 
-    std.debug.print("printing stuff, {d}", .{bytes});
+    // std.debug.print("printing stuff, {d}", .{bytes});
 
     var ui_options = ui.Options.init();
     var selection: ?ui.Selection = null;
@@ -48,6 +48,8 @@ pub fn main() anyerror!void {
         .projection = rl.CameraProjection.camera_perspective,
     };
 
+    rl.setTargetFPS(60);
+
     // Orbital initialisation
     //--------------------------------------------------------------------------------------
 
@@ -59,7 +61,7 @@ pub fn main() anyerror!void {
     moon.prt();
     earth.prt();
 
-    const num_sat = 200;
+    const num_sat = 20;
     var entities: [num_sat + 2]OrbitalEntity = undefined;
     entities[0] = earth;
     entities[1] = moon;
@@ -75,28 +77,38 @@ pub fn main() anyerror!void {
         ent.* = OrbitalEntity.init("s", rl.Vector3.init(r.x, r.y, r.z), mvec, 1e9);
     }
 
-    const secondIncraments = [_]i32{ 1, 60, 15 * 60, 60 * 60, 6 * 60 * 60, 1 * 24 * 60 * 60, 15 * 24 * 60 * 68 };
+    const secondIncraments = [_]i32{ 60, 2 * 60, 15 * 60, 60 * 60, 6 * 60 * 60, 1 * 24 * 60 * 60, 15 * 24 * 60 * 68 };
     var incramentIndex: usize = 3;
 
     // Main game loop
     while (!rl.windowShouldClose()) { // Detect window close button or ESC key
         // Update
         //----------------------------------------------------------------------------------
-        camera.update(rl.CameraMode.camera_third_person);
 
-        if (rl.isKeyPressed(rl.KeyboardKey.key_up) and incramentIndex < secondIncraments.len) {
+        if (rl.isKeyPressed(rl.KeyboardKey.key_up) and incramentIndex < secondIncraments.len - 1) {
             incramentIndex += 1;
         }
         if (rl.isKeyPressed(rl.KeyboardKey.key_down) and incramentIndex > 0) {
             incramentIndex -= 1;
         }
 
+        if (rl.isKeyPressed(rl.KeyboardKey.key_j)) ui_options.float_tester += 0.001;
+        if (rl.isKeyPressed(rl.KeyboardKey.key_k)) ui_options.float_tester -= 0.001;
+
         if (ui.Selection.get(&entities, camera)) |selected| {
             selection = selected;
-            std.debug.print("selected : .{any}\n", .{selection});
         }
 
-        if (rl.isMouseButtonPressed(rl.MouseButton.mouse_button_right)) selection = null;
+        if (rl.isMouseButtonPressed(rl.MouseButton.mouse_button_right)) {
+            selection = null;
+        }
+
+        if (selection) |selected| {
+            camera.target = map(entities[selected.entity].pos);
+            selection.?.old_entity = entities[selected.entity];
+        }
+
+        camera.update(rl.CameraMode.camera_third_person);
 
         ui_options.show_fps = ui_options.show_fps != rl.isKeyPressed(rl.KeyboardKey.key_f);
         ui_options.show_orbital_stats = ui_options.show_orbital_stats != rl.isKeyPressed(rl.KeyboardKey.key_i);
@@ -119,6 +131,7 @@ pub fn main() anyerror!void {
 
         if (ui_options.show_orbital_stats) ui.orbitalStatsWriter(
             &entities,
+            selection,
             secondIncraments[incramentIndex],
             total_time,
             10,
@@ -126,29 +139,19 @@ pub fn main() anyerror!void {
             20,
         );
 
-        if (selection.?.collision.hit) {
-            std.debug.print("printing stats becuse we have selection\n", .{});
-        }
+        // if (selection != null and selection.?.collision.hit) {
+        //     std.debug.print("printing stats becuse we have selection\n", .{});
+        // }
 
         // 3D obects -----------
         if (ui_options.show_sim) {
             camera.begin();
             defer camera.end();
 
-            if (selection) |selected| {
-                rl.drawSphereWires(
-                    map(entities[selected.entity].pos),
-                    0.5,
-                    4,
-                    4,
-                    rl.Color.green,
-                );
-            }
-
             for (entities, 0..) |ent, index| {
                 var color: rl.Color = undefined;
                 var radius: f32 = undefined;
-                if (index == 0) {
+                if (selection != null and selection.?.entity == index) {} else if (index == 0) {
                     color = rl.Color.blue;
                     radius = 2;
                 } else if (index == 1) {
@@ -160,6 +163,37 @@ pub fn main() anyerror!void {
                     radius = 0.3;
                 }
                 rl.drawSphere(map(ent.pos), radius, color);
+            }
+
+            if (selection) |selected| {
+                const s = entities[selected.entity];
+                // selection = null;
+                rl.drawSphereWires(
+                    map(s.pos),
+                    0.5,
+                    4,
+                    4,
+                    rl.Color.green,
+                );
+
+                // Draw velocity vector for selection
+                rl.drawLine3D(
+                    map(s.pos),
+                    map(s.pos).add(s.vel.scale(1e-3)),
+                    rl.Color.pink,
+                );
+
+                // Calculate & draw acceleration vector for selection
+                if (selected.old_entity) |old_ent| {
+                    const dt: f32 = @floatFromInt(secondIncraments[incramentIndex]);
+                    const dv = s.vel.subtract(old_ent.vel);
+                    const acceleration = dv.scale(1 / dt).scale(100);
+                    rl.drawLine3D(
+                        map(old_ent.pos),
+                        map(old_ent.pos).add(acceleration),
+                        rl.Color.purple,
+                    );
+                }
             }
         }
         //----------------------------------------------------------------------------------
