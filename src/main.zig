@@ -6,8 +6,6 @@ const OrbitalEntity = @import("orbit.zig").OrbitalEntity;
 const orbit = @import("orbit.zig");
 const ui = @import("ui.zig");
 
-const dprint = @import("utils.zig").dprint;
-
 pub fn main() anyerror!void {
     // Program Initialization
     //--------------------------------------------------------------------------------------
@@ -29,26 +27,6 @@ pub fn main() anyerror!void {
 
     var ui_options = ui.Options.init();
     var selection: ?ui.Selection = null;
-
-    // Raylib Initialization
-    //--------------------------------------------------------------------------------------
-    const screenWidth = 800;
-    const screenHeight = 450;
-
-    rl.initWindow(screenWidth, screenHeight, "raylib-zig [core] example - basic window");
-    defer rl.closeWindow(); // Close window and OpenGL context
-
-    // rl.setTargetFPS(60); // Set our game to run at 60 frames-per-second
-
-    var camera = rl.Camera3D{
-        .position = rl.Vector3.init(0, 0, 20),
-        .target = rl.Vector3.init(0, 0, 0),
-        .up = rl.Vector3.init(0, 1, 0),
-        .fovy = 80,
-        .projection = rl.CameraProjection.camera_perspective,
-    };
-
-    rl.setTargetFPS(60);
 
     // Orbital initialisation
     //--------------------------------------------------------------------------------------
@@ -76,6 +54,32 @@ pub fn main() anyerror!void {
         const r = mpos.scale(fac).rotateByAxisAngle(rl.Vector3.init(1.0, 0, 0), fac);
         ent.* = OrbitalEntity.init("s", rl.Vector3.init(r.x, r.y, r.z), mvec, 1e9);
     }
+
+    // Raylib Initialization
+    //--------------------------------------------------------------------------------------
+    const screenWidth = 800;
+    const screenHeight = 450;
+
+    rl.initWindow(screenWidth, screenHeight, std.fmt.comptimePrint("{} orbiting objects - {s}", .{
+        entities.len,
+        switch (builtin.mode) {
+            std.builtin.OptimizeMode.Debug => "Debug",
+            std.builtin.OptimizeMode.ReleaseFast => "ReleaseFast",
+            std.builtin.OptimizeMode.ReleaseSafe => "ReleaseSafe",
+            std.builtin.OptimizeMode.ReleaseSmall => "ReleaseSmall",
+        },
+    }));
+    defer rl.closeWindow(); // Close window and OpenGL context
+
+    rl.setTargetFPS(60); // Set our game to run at 60 frames-per-second
+
+    var camera = rl.Camera3D{
+        .position = rl.Vector3.init(0, 0, 20),
+        .target = rl.Vector3.init(0, 0, 0),
+        .up = rl.Vector3.init(0, 1, 0),
+        .fovy = 80,
+        .projection = rl.CameraProjection.camera_perspective,
+    };
 
     // Main game loop
     while (!rl.windowShouldClose()) { // Detect window close button or ESC key
@@ -159,8 +163,8 @@ pub fn main() anyerror!void {
                     const dv = s.vel.subtract(old_ent.vel);
                     const acceleration = dv.scale(1 / dt).scale(100);
                     rl.drawLine3D(
-                        map(old_ent.pos),
-                        map(old_ent.pos).add(acceleration),
+                        map(s.pos),
+                        map(s.pos).add(acceleration),
                         rl.Color.purple,
                     );
                 }
