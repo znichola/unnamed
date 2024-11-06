@@ -5,6 +5,7 @@ const rl = @import("raylib");
 const OrbitalEntity = @import("orbit.zig").OrbitalEntity;
 const orbit = @import("orbit.zig");
 const ui = @import("ui.zig");
+const RingBuffer = @import("ringBuffer.zig").RingBuffer;
 
 pub fn main() anyerror!void {
     // Program Initialization
@@ -25,6 +26,21 @@ pub fn main() anyerror!void {
 
     // std.debug.print("printing stuff, {d}", .{bytes});
 
+    std.debug.print("TESTING\n", .{});
+
+    const single = 3 * @sizeOf(f32);
+    const totalSingle = single * 20;
+    const total = totalSingle * 60 * 10;
+
+    std.debug.print(
+        "total single step: {}\nlast 60 second: {} or {d}MB\n",
+        .{
+            totalSingle,
+            total,
+            @as(f32, @floatFromInt(total)) / @as(f32, @floatFromInt(1024 * 1024)),
+        },
+    );
+
     var ui_options = ui.Options.init();
     var selection: ?ui.Selection = null;
 
@@ -43,6 +59,13 @@ pub fn main() anyerror!void {
     var entities: [num_sat + 2]OrbitalEntity = undefined;
     entities[0] = earth;
     entities[1] = moon;
+
+    const Ph = RingBuffer(600, rl.Vector3);
+    var posHistory: [num_sat + 2]Ph = undefined;
+    for (posHistory[0..]) |*pos| {
+        pos.* = Ph.init();
+    }
+    // var moonBuffer = RingBuffer(1200, rl.Vector3).init();
 
     var total_time: i32 = 0;
 
@@ -95,6 +118,12 @@ pub fn main() anyerror!void {
         // Calculate orbit ticks
         orbit.integrate(&entities, ui_options.dt.value());
 
+        // record moon pos history
+        for (posHistory[0..], 0..) |*p, i| {
+            p.*.add(entities[i].pos);
+        }
+        // posHistory[1].add(entities[1].pos);
+
         total_time += ui_options.dt.value();
 
         // Draw
@@ -135,6 +164,15 @@ pub fn main() anyerror!void {
                     const hue = to(f32, index + 1) / to(f32, entities.len) * 360;
                     color = rl.Color.fromHSV(hue, 0.5, 0.7);
                     radius = 0.3;
+                }
+
+                if (true) {
+                    posHistory[index].forEachContext(rl.Color, color, struct {
+                        fn call(c: rl.Color, a: rl.Vector3) rl.Vector3 {
+                            rl.drawPoint3D(map(a), c);
+                            return a;
+                        }
+                    }.call);
                 }
                 rl.drawSphere(map(ent.pos), radius, color);
             }
