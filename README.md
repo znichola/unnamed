@@ -63,4 +63,15 @@ The principal tool in the cspice toolkit is [spkef_c](https://naif.jpl.nasa.gov/
 
 ### I'm distracted
 
-Some 60 million years ago, the asteroid never hit. Proto humans evolved from dinasours, they conquered the whole system, some 15k years ago the fractured civilisation is at war. Over the next 30k years wage interplanitary war. 
+Some 60 million years ago, the asteroid never hit. Proto humans evolved from dinasours, they conquered the whole system, some 15k years ago the fractured civilisation is at war. Over the next 30k years wage interplanitary war.
+
+
+# TODO
+
+MVU : look at using to for decoupling my UI to make it tesable.
+
+TEA the elm architecture, more reading about MVU
+
+write test, then fix code to work, when refactoring & adapting test to existing code. 
+
+Burnstean : working with legacy code. "seams in code", cut the code then resow it together creating a seam to make an inpoint for testing.
